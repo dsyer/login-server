@@ -178,22 +178,19 @@
 
 	<bean id="oauthAccessDeniedHandler" class="org.springframework.security.oauth2.provider.error.OAuth2AccessDeniedHandler" />
 
-	<bean id="authzAuthenticationFilter" class="org.springframework.web.filter.CompositeFilter">
-		<property name="filters">
+	<bean id="authzAuthenticationFilter" class="org.cloudfoundry.identity.uaa.authentication.AuthzAuthenticationFilter">
+		<constructor-arg ref="remoteUsernamePasswordAuthenticationManager" />
+		<property name="parameterNames">
 			<list>
-				<bean class="org.cloudfoundry.identity.uaa.authentication.AuthzAuthenticationFilter">
-					<constructor-arg ref="remoteAuthenticationManager" />
-					<property name="parameterNames">
-						<list>
-							<value>username</value>
-							<value>password</value>
-							<value>credentials</value>
-						</list>
-					</property>
-				</bean>
-				<bean class="org.cloudfoundry.identity.uaa.login.UsernamePasswordExtractingFilter"/>
+				<value>username</value>
+				<value>password</value>
+				<value>credentials</value>
 			</list>
 		</property>
+	</bean>
+
+	<bean id="remoteUsernamePasswordAuthenticationManager" class="org.cloudfoundry.identity.uaa.login.UsernamePasswordExtractingAuthenticationManager">
+		<constructor-arg ref="remoteAuthenticationManager"/>
 	</bean>
 
 	<mvc:resources location="/" mapping="/**" />

@@ -13,20 +13,12 @@
 
 package org.cloudfoundry.identity.uaa.login;
 
-import java.io.IOException;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.AuthenticationException;
 
 /**
  * Authentication filter translating a generic Authentication into a UsernamePasswordAuthenticationToken.
@@ -34,39 +26,32 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * @author Dave Syer
  * 
  */
-public class UsernamePasswordExtractingFilter implements Filter {
+public class UsernamePasswordExtractingAuthenticationManager implements AuthenticationManager {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	private final AuthenticationManager delegate;
+	
 	/**
-	 * Populates the Spring Security context with a {@link UsernamePasswordAuthenticationToken} referring to the client
-	 * that authenticates using the basic authorization header.
+	 * @param delegate
+	 */
+	public UsernamePasswordExtractingAuthenticationManager(AuthenticationManager delegate) {
+		super();
+		this.delegate = delegate;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.springframework.security.authentication.AuthenticationManager#authenticate(org.springframework.security.core.Authentication)
 	 */
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-			ServletException {
-		
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
+	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
 		if (authentication == null || authentication instanceof UsernamePasswordAuthenticationToken) {
-			chain.doFilter(request, response);
-			return;
+			return null;
 		}
 		
 		UsernamePasswordAuthenticationToken output = new UsernamePasswordAuthenticationToken(authentication, authentication.getCredentials(), authentication.getAuthorities());
 		output.setAuthenticated(false);
-		SecurityContextHolder.getContext().setAuthentication(output);
-
-		chain.doFilter(request, response);
-
-	}
-
-	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-	}
-
-	@Override
-	public void destroy() {
+		return delegate.authenticate(output);
 	}
 
 }
